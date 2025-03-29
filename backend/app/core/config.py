@@ -1,3 +1,7 @@
+"""
+Core configuration settings for the application.
+"""
+
 import secrets
 import warnings
 from typing import Annotated, Any, Literal
@@ -17,14 +21,21 @@ from typing_extensions import Self
 
 
 def parse_cors(v: Any) -> list[str] | str:
+    """
+    Parse CORS origins from a string or list of strings.
+    """
     if isinstance(v, str) and not v.startswith("["):
         return [i.strip() for i in v.split(",")]
-    elif isinstance(v, list | str):
+    if isinstance(v, list | str):
         return v
     raise ValueError(v)
 
 
 class Settings(BaseSettings):
+    """
+    Base settings for the application.
+    """
+
     model_config = SettingsConfigDict(
         # Use top level .env file (one level above ./backend/)
         env_file="../.env",
@@ -38,13 +49,17 @@ class Settings(BaseSettings):
     FRONTEND_HOST: str = "http://localhost:5173"
     ENVIRONMENT: Literal["local", "staging", "production"] = "local"
 
-    BACKEND_CORS_ORIGINS: Annotated[
-        list[AnyUrl] | str, BeforeValidator(parse_cors)
-    ] = []
+    BACKEND_CORS_ORIGINS: Annotated[list[AnyUrl] | str, BeforeValidator(parse_cors)] = (
+        []
+    )
 
     @computed_field  # type: ignore[prop-decorator]
     @property
     def all_cors_origins(self) -> list[str]:
+        """
+        Returns a list of all CORS origins from BACKEND_CORS_ORIGINS and
+        FRONTEND_HOST.
+        """
         return [str(origin).rstrip("/") for origin in self.BACKEND_CORS_ORIGINS] + [
             self.FRONTEND_HOST
         ]
@@ -60,6 +75,9 @@ class Settings(BaseSettings):
     @computed_field  # type: ignore[prop-decorator]
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> PostgresDsn:
+        """
+        Returns the SQLAlchemy database URI for PostgreSQL, dynamically.
+        """
         return MultiHostUrl.build(
             scheme="postgresql+psycopg",
             username=self.POSTGRES_USER,
@@ -89,6 +107,9 @@ class Settings(BaseSettings):
     @computed_field  # type: ignore[prop-decorator]
     @property
     def emails_enabled(self) -> bool:
+        """
+        Return whether email sending is enabled across the application.
+        """
         return bool(self.SMTP_HOST and self.EMAILS_FROM_EMAIL)
 
     EMAIL_TEST_USER: EmailStr = "test@example.com"
@@ -99,7 +120,7 @@ class Settings(BaseSettings):
         if value == "changethis":
             message = (
                 f'The value of {var_name} is "changethis", '
-                "for security, please change it, at least for deployments."
+                "for security, please change it!"
             )
             if self.ENVIRONMENT == "local":
                 warnings.warn(message, stacklevel=1)

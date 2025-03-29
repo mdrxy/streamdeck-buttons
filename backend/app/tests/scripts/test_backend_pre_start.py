@@ -1,11 +1,17 @@
+"""
+Tests the backend pre-start script.
+"""
+
 from unittest.mock import MagicMock, patch
 
-from sqlmodel import select
-
 from app.backend_pre_start import init, logger
+from sqlmodel import select
 
 
 def test_init_successful_connection() -> None:
+    """
+    Test the successful connection to the database.
+    """
     engine_mock = MagicMock()
 
     session_mock = MagicMock()
@@ -21,7 +27,7 @@ def test_init_successful_connection() -> None:
         try:
             init(engine_mock)
             connection_successful = True
-        except Exception:
+        except ConnectionError:
             connection_successful = False
 
         assert (

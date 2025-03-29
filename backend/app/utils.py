@@ -1,3 +1,7 @@
+"""
+Utility functions for sending emails and generating tokens.
+"""
+
 import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
@@ -6,11 +10,10 @@ from typing import Any
 
 import emails  # type: ignore
 import jwt
-from jinja2 import Template
-from jwt.exceptions import InvalidTokenError
-
 from app.core import security
 from app.core.config import settings
+from jinja2 import Template
+from jwt.exceptions import InvalidTokenError
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -18,11 +21,18 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class EmailData:
+    """
+    Fields for the email data.
+    """
+
     html_content: str
     subject: str
 
 
 def render_email_template(*, template_name: str, context: dict[str, Any]) -> str:
+    """
+    Render an email template with the provided context.
+    """
     template_str = (
         Path(__file__).parent / "email-templates" / "build" / template_name
     ).read_text()
@@ -36,6 +46,9 @@ def send_email(
     subject: str = "",
     html_content: str = "",
 ) -> None:
+    """
+    Send an email using the SMTP server.
+    """
     assert settings.emails_enabled, "no provided configuration for email variables"
     message = emails.Message(
         subject=subject,
@@ -52,10 +65,13 @@ def send_email(
     if settings.SMTP_PASSWORD:
         smtp_options["password"] = settings.SMTP_PASSWORD
     response = message.send(to=email_to, smtp=smtp_options)
-    logger.info(f"send email result: {response}")
+    logger.info("send email result: %s", response)
 
 
 def generate_test_email(email_to: str) -> EmailData:
+    """
+    Generate a test email.
+    """
     project_name = settings.PROJECT_NAME
     subject = f"{project_name} - Test email"
     html_content = render_email_template(
@@ -66,6 +82,9 @@ def generate_test_email(email_to: str) -> EmailData:
 
 
 def generate_reset_password_email(email_to: str, email: str, token: str) -> EmailData:
+    """
+    Generate an email for password reset.
+    """
     project_name = settings.PROJECT_NAME
     subject = f"{project_name} - Password recovery for user {email}"
     link = f"{settings.FRONTEND_HOST}/reset-password?token={token}"
@@ -85,6 +104,9 @@ def generate_reset_password_email(email_to: str, email: str, token: str) -> Emai
 def generate_new_account_email(
     email_to: str, username: str, password: str
 ) -> EmailData:
+    """
+    Generate an email for a new account.
+    """
     project_name = settings.PROJECT_NAME
     subject = f"{project_name} - New account for user {username}"
     html_content = render_email_template(
@@ -101,6 +123,9 @@ def generate_new_account_email(
 
 
 def generate_password_reset_token(email: str) -> str:
+    """
+    Generate a JWT token for password reset.
+    """
     delta = timedelta(hours=settings.EMAIL_RESET_TOKEN_EXPIRE_HOURS)
     now = datetime.now(timezone.utc)
     expires = now + delta
@@ -114,6 +139,10 @@ def generate_password_reset_token(email: str) -> str:
 
 
 def verify_password_reset_token(token: str) -> str | None:
+    """
+    Verify the password reset token and return the email address if
+    valid.
+    """
     try:
         decoded_token = jwt.decode(
             token, settings.SECRET_KEY, algorithms=[security.ALGORITHM]

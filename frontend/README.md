@@ -10,12 +10,13 @@ Before you begin, ensure that you have either the Node Version Manager (nvm) or 
 
 * After installing either nvm or fnm, proceed to the `frontend` directory:
 
-```bash
+```sh
 cd frontend
 ```
+
 * If the Node.js version specified in the `.nvmrc` file isn't installed on your system, you can install it using the appropriate command:
 
-```bash
+```sh
 # If using fnm
 fnm install
 
@@ -25,7 +26,7 @@ nvm install
 
 * Once the installation is complete, switch to the installed version:
 
-```bash
+```sh
 # If using fnm
 fnm use
 
@@ -35,42 +36,21 @@ nvm use
 
 * Within the `frontend` directory, install the necessary NPM packages:
 
-```bash
+```sh
 npm install
 ```
 
 * And start the live server with the following `npm` script:
 
-```bash
+```sh
 npm run dev
 ```
 
-* Then open your browser at http://localhost:5173/.
+* Then open your browser at <http://localhost:5173/>.
 
 Notice that this live server is not running inside Docker, it's for local development, and that is the recommended workflow. Once you are happy with your frontend, you can build the frontend Docker image and start it, to test it in a production-like environment. But building the image at every change will not be as productive as running the local development server with live reload.
 
 Check the file `package.json` to see other available options.
-
-### Removing the frontend
-
-If you are developing an API-only app and want to remove the frontend, you can do it easily:
-
-* Remove the `./frontend` directory.
-
-* In the `docker-compose.yml` file, remove the whole service / section `frontend`.
-
-* In the `docker-compose.override.yml` file, remove the whole service / section `frontend` and `playwright`.
-
-Done, you have a frontend-less (api-only) app. 🤓
-
----
-
-If you want, you can also remove the `FRONTEND` environment variables from:
-
-* `.env`
-* `./scripts/*.sh`
-
-But it would be only to clean them up, leaving them won't really have any effect either way.
 
 ## Generate Client
 
@@ -79,7 +59,7 @@ But it would be only to clean them up, leaving them won't really have any effect
 * Activate the backend virtual environment.
 * From the top level project directory, run the script:
 
-```bash
+```sh
 ./scripts/generate-client.sh
 ```
 
@@ -93,7 +73,7 @@ But it would be only to clean them up, leaving them won't really have any effect
 
 * To generate the frontend client, run:
 
-```bash
+```sh
 npm run generate-client
 ```
 
@@ -127,25 +107,25 @@ The frontend code is structured as follows:
 
 The frontend includes initial end-to-end tests using Playwright. To run the tests, you need to have the Docker Compose stack running. Start the stack with the following command:
 
-```bash
+```sh
 docker compose up -d --wait backend
 ```
 
 Then, you can run the tests with the following command:
 
-```bash
+```sh
 npx playwright test
 ```
 
 You can also run your tests in UI mode to see the browser and interact with it running:
 
-```bash
+```sh
 npx playwright test --ui
 ```
 
 To stop and remove the Docker Compose stack and clean the data created in tests, use the following command:
 
-```bash
+```sh
 docker compose down -v
 ```
 

@@ -70,9 +70,9 @@ function ItemsTable() {
             <FiSearch />
           </EmptyState.Indicator>
           <VStack textAlign="center">
-            <EmptyState.Title>You don't have any items yet</EmptyState.Title>
+            <EmptyState.Title>No buttons have been added yet</EmptyState.Title>
             <EmptyState.Description>
-              Add a new item to get started
+              Add a new button to get started
             </EmptyState.Description>
           </VStack>
         </EmptyState.Content>
@@ -135,7 +135,7 @@ function Items() {
   return (
     <Container maxW="full">
       <Heading size="lg" pt={12}>
-        Items Management
+        Button Management
       </Heading>
       <AddItem />
       <ItemsTable />

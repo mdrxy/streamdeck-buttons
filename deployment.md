@@ -1,4 +1,4 @@
-# FastAPI Project - Deployment
+# Deployment - Stream Deck Button Tracker
 
 You can deploy the project using Docker Compose to a remote server.
 
@@ -6,14 +6,17 @@ This project expects you to have a Traefik proxy handling communication to the o
 
 You can use CI/CD (continuous integration and continuous deployment) systems to deploy automatically, there are already configurations to do it with GitHub Actions.
 
-But you have to configure a couple things first. 🤓
-
 ## Preparation
 
 * Have a remote server ready and available.
 * Configure the DNS records of your domain to point to the IP of the server you just created.
-* Configure a wildcard subdomain for your domain, so that you can have multiple subdomains for different services, e.g. `*.fastapi-project.example.com`. This will be useful for accessing different components, like `dashboard.fastapi-project.example.com`, `api.fastapi-project.example.com`, `traefik.fastapi-project.example.com`, `adminer.fastapi-project.example.com`, etc. And also for `staging`, like `dashboard.staging.fastapi-project.example.com`, `adminer.staging..fastapi-project.example.com`, etc.
-* Install and configure [Docker](https://docs.docker.com/engine/install/) on the remote server (Docker Engine, not Docker Desktop).
+* Configure a wildcard subdomain for your domain, so that you can have multiple subdomains for different services, e.g.:
+  * `*.fastapi-project.example.com`
+    * This will be useful for accessing different components, like `dashboard.fastapi-project.example.com`
+  * `api.fastapi-project.example.com`
+  * `traefik.fastapi-project.example.com`
+  * `adminer.fastapi-project.example.com`
+* Install and configure [Docker Engine](https://docs.docker.com/engine/install/) on the remote server.
 
 ## Public Traefik
 
@@ -25,13 +28,13 @@ You need to do these next steps only once.
 
 * Create a remote directory to store your Traefik Docker Compose file:
 
-```bash
+```sh
 mkdir -p /root/code/traefik-public/
 ```
 
 Copy the Traefik Docker Compose file to your server. You could do it by running the command `rsync` in your local terminal:
 
-```bash
+```sh
 rsync -a docker-compose.traefik.yml root@your-server.example.com:/root/code/traefik-public/
 ```
 
@@ -43,7 +46,7 @@ This way, there will be a single public Traefik proxy that handles the communica
 
 To create a Docker "public network" named `traefik-public` run the following command in your remote server:
 
-```bash
+```sh
 docker network create traefik-public
 ```
 
@@ -53,37 +56,37 @@ The Traefik Docker Compose file expects some environment variables to be set in 
 
 * Create the username for HTTP Basic Auth, e.g.:
 
-```bash
+```sh
 export USERNAME=admin
 ```
 
 * Create an environment variable with the password for HTTP Basic Auth, e.g.:
 
-```bash
+```sh
 export PASSWORD=changethis
 ```
 
 * Use openssl to generate the "hashed" version of the password for HTTP Basic Auth and store it in an environment variable:
 
-```bash
+```sh
 export HASHED_PASSWORD=$(openssl passwd -apr1 $PASSWORD)
 ```
 
 To verify that the hashed password is correct, you can print it:
 
-```bash
+```sh
 echo $HASHED_PASSWORD
 ```
 
 * Create an environment variable with the domain name for your server, e.g.:
 
-```bash
+```sh
 export DOMAIN=fastapi-project.example.com
 ```
 
 * Create an environment variable with the email for Let's Encrypt, e.g.:
 
-```bash
+```sh
 export EMAIL=admin@example.com
 ```
 
@@ -93,13 +96,13 @@ export EMAIL=admin@example.com
 
 Go to the directory where you copied the Traefik Docker Compose file in your remote server:
 
-```bash
+```sh
 cd /root/code/traefik-public/
 ```
 
 Now with the environment variables set and the `docker-compose.traefik.yml` in place, you can start the Traefik Docker Compose running the following command:
 
-```bash
+```sh
 docker compose -f docker-compose.traefik.yml up -d
 ```
 
@@ -115,13 +118,13 @@ You need to set some environment variables first.
 
 Set the `ENVIRONMENT`, by default `local` (for development), but when deploying to a server you would put something like `staging` or `production`:
 
-```bash
+```sh
 export ENVIRONMENT=production
 ```
 
 Set the `DOMAIN`, by default `localhost` (for development), but when deploying you would use your own domain, for example:
 
-```bash
+```sh
 export DOMAIN=fastapi-project.example.com
 ```
 
@@ -157,7 +160,7 @@ Some environment variables in the `.env` file have a default value of `changethi
 
 You have to change them with a secret key, to generate secret keys you can run the following command:
 
-```bash
+```sh
 python -c "import secrets; print(secrets.token_urlsafe(32))"
 ```
 
@@ -167,7 +170,7 @@ Copy the content and use that as password / secret key. And run that again to ge
 
 With the environment variables in place, you can deploy with Docker Compose:
 
-```bash
+```sh
 docker compose -f docker-compose.yml up -d
 ```
 
@@ -185,25 +188,25 @@ There are already two environments configured, `staging` and `production`. 🚀
 
 * On your remote server, create a user for your GitHub Actions:
 
-```bash
+```sh
 sudo adduser github
 ```
 
 * Add Docker permissions to the `github` user:
 
-```bash
+```sh
 sudo usermod -aG docker github
 ```
 
 * Temporarily switch to the `github` user:
 
-```bash
+```sh
 sudo su - github
 ```
 
 * Go to the `github` user's home directory:
 
-```bash
+```sh
 cd
 ```
 
@@ -215,7 +218,7 @@ After installing, the guide would tell you to run a command to start the runner.
 
 To make sure it runs on startup and continues running, you can install it as a service. To do that, exit the `github` user and go back to the `root` user:
 
-```bash
+```sh
 exit
 ```
 
@@ -223,31 +226,31 @@ After you do it, you will be on the previous user again. And you will be on the 
 
 Before being able to go the `github` user directory, you need to become the `root` user (you might already be):
 
-```bash
+```sh
 sudo su
 ```
 
 * As the `root` user, go to the `actions-runner` directory inside of the `github` user's home directory:
 
-```bash
+```sh
 cd /home/github/actions-runner
 ```
 
 * Install the self-hosted runner as a service with the user `github`:
 
-```bash
+```sh
 ./svc.sh install github
 ```
 
 * Start the service:
 
-```bash
+```sh
 ./svc.sh start
 ```
 
 * Check the status of the service:
 
-```bash
+```sh
 ./svc.sh status
 ```
 

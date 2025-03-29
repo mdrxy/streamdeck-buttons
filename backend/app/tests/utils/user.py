@@ -1,15 +1,24 @@
-from fastapi.testclient import TestClient
-from sqlmodel import Session
+"""
+Utility functions for user authentication and creation.
+These functions are used in tests to create users,
+generate authentication tokens, and manage user sessions.
+"""
 
 from app import crud
 from app.core.config import settings
 from app.models import User, UserCreate, UserUpdate
 from app.tests.utils.utils import random_email, random_lower_string
+from fastapi.testclient import TestClient
+from sqlmodel import Session
 
 
 def user_authentication_headers(
     *, client: TestClient, email: str, password: str
 ) -> dict[str, str]:
+    """
+    Return authentication headers for a user with given email and
+    password.
+    """
     data = {"username": email, "password": password}
 
     r = client.post(f"{settings.API_V1_STR}/login/access-token", data=data)
@@ -20,6 +29,9 @@ def user_authentication_headers(
 
 
 def create_random_user(db: Session) -> User:
+    """
+    Create a random user instance.
+    """
     email = random_email()
     password = random_lower_string()
     user_in = UserCreate(email=email, password=password)
@@ -31,7 +43,7 @@ def authentication_token_from_email(
     *, client: TestClient, email: str, db: Session
 ) -> dict[str, str]:
     """
-    Return a valid token for the user with given email.
+    Return a valid token for A user with given email.
 
     If the user doesn't exist it is created first.
     """
@@ -43,7 +55,7 @@ def authentication_token_from_email(
     else:
         user_in_update = UserUpdate(password=password)
         if not user.id:
-            raise Exception("User id not set")
+            raise ValueError("User id not set")
         user = crud.update_user(session=db, db_user=user, user_in=user_in_update)
 
     return user_authentication_headers(client=client, email=email, password=password)

@@ -1,13 +1,21 @@
+"""
+Entry point for the FastAPI application.
+"""
+
 import sentry_sdk
+from app.api.main import api_router
+from app.core.config import settings
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
 from starlette.middleware.cors import CORSMiddleware
 
-from app.api.main import api_router
-from app.core.config import settings
-
 
 def custom_generate_unique_id(route: APIRoute) -> str:
+    """
+    Helper function to generate a unique ID for each route.
+    This is used for Sentry tracing (which is used for performance
+    monitoring).
+    """
     return f"{route.tags[0]}-{route.name}"
 
 

@@ -1,53 +1,85 @@
 import uuid
+from datetime import datetime, timezone
 
 from pydantic import EmailStr
-from sqlmodel import Field, Relationship, SQLModel
+from sqlalchemy import text
+from sqlalchemy.orm import Mapped
+from sqlmodel import Column, DateTime, Field, Relationship, SQLModel
 
 
-# Shared properties
 class UserBase(SQLModel):
+    """
+    Shared User properties
+    """
+
     email: EmailStr = Field(unique=True, index=True, max_length=255)
     is_active: bool = True
     is_superuser: bool = False
     full_name: str | None = Field(default=None, max_length=255)
 
 
-# Properties to receive via API on creation
 class UserCreate(UserBase):
+    """
+    Properties to receive via API on User creation
+    """
+
     password: str = Field(min_length=8, max_length=40)
 
 
 class UserRegister(SQLModel):
+    """
+    Properties to receive via API on registration
+    """
+
     email: EmailStr = Field(max_length=255)
     password: str = Field(min_length=8, max_length=40)
     full_name: str | None = Field(default=None, max_length=255)
 
 
-# Properties to receive via API on update, all are optional
 class UserUpdate(UserBase):
+    """
+    Properties to receive via API on update, all are optional
+    """
+
     email: EmailStr | None = Field(default=None, max_length=255)  # type: ignore
     password: str | None = Field(default=None, min_length=8, max_length=40)
 
 
 class UserUpdateMe(SQLModel):
+    """
+    For updating the current User.
+    """
+
     full_name: str | None = Field(default=None, max_length=255)
     email: EmailStr | None = Field(default=None, max_length=255)
 
 
 class UpdatePassword(SQLModel):
+    """
+    Properties to receive via API on password update
+    """
+
     current_password: str = Field(min_length=8, max_length=40)
     new_password: str = Field(min_length=8, max_length=40)
 
 
-# Database model, database table inferred from class name
 class User(UserBase, table=True):
+    """
+    Database model, database table inferred from class name
+    """
+
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     hashed_password: str
-    items: list["Item"] = Relationship(back_populates="owner", cascade_delete=True)
+    buttons: Mapped[list["Button"]] = Relationship(
+        back_populates="creator", cascade_delete=True
+    )
 
 
-# Properties to return via API, id is always required
 class UserPublic(UserBase):
+    """
+    Properties to return via API, `id` is always required
+    """
+
     id: uuid.UUID
 
 
@@ -56,55 +88,118 @@ class UsersPublic(SQLModel):
     count: int
 
 
-# Shared properties
-class ItemBase(SQLModel):
+class ButtonBase(SQLModel):
+    """
+    Shared properties for all Button models
+    """
+
+    type: str = Field(
+        ..., max_length=50, description="Button type (e.g. PSA, ID, SFX, etc.)"
+    )  # TODO: add enum values?
     title: str = Field(min_length=1, max_length=255)
     description: str | None = Field(default=None, max_length=255)
+    usage_count: int = Field(default=0)
+    duration: float | None = Field(
+        default=None, description="Seconds, if relevant for PSA/ID/SFX"
+    )
+    source: str | None = Field(default=None, max_length=255)
+    # We can store the "retired_at" as null if not retired
+    retired_at: datetime | None = Field(
+        default=None, description="When was this button retired?"
+    )
 
 
-# Properties to receive on item creation
-class ItemCreate(ItemBase):
+class ButtonCreate(ButtonBase):
+    """
+    Properties to receive on Button creation
+    """
+
+    # 'created_by' is derived from the logged-in user, so not accepted here
     pass
 
 
-# Properties to receive on item update
-class ItemUpdate(ItemBase):
-    title: str | None = Field(default=None, min_length=1, max_length=255)  # type: ignore
+class ButtonUpdate(ButtonBase):
+    """
+    Properties to receive on Button update
+    """
+
+    # All fields optional in the update
+    type: str | None = Field(default=None, max_length=50)
+    # We might want to exclude usage_count updates via the API, since
+    # they should be calculated automatically
 
 
-# Database model, database table inferred from class name
-class Item(ItemBase, table=True):
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    owner_id: uuid.UUID = Field(
+class Button(ButtonBase, table=True):
+    """
+    Button database model, database table inferred from class name
+    """
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True, index=True)
+
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        sa_column=Column(
+            DateTime(timezone=True),
+            server_default=text("CURRENT_TIMESTAMP"),
+            nullable=False,
+        ),
+    )
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        sa_column=Column(
+            DateTime(timezone=True),
+            onupdate=text("CURRENT_TIMESTAMP"),
+            server_default=text("CURRENT_TIMESTAMP"),
+            nullable=False,
+        ),
+    )
+
+    # Foreign key to user
+    # Currently, if the user is deleted, the button will be deleted as well (as well as all buttons
+    # created by that user) TODO: set to a default "deleted" user instead?
+    created_by: uuid.UUID = Field(
         foreign_key="user.id", nullable=False, ondelete="CASCADE"
     )
-    owner: User | None = Relationship(back_populates="items")
+    # Load the user who created the button, via the relationship:
+    creator: Mapped["User"] = Relationship(back_populates="buttons")
 
 
-# Properties to return via API, id is always required
-class ItemPublic(ItemBase):
+class ButtonPublic(ButtonBase):
+    """
+    Button properties to return via API, `id` is always required
+    """
+
     id: uuid.UUID
-    owner_id: uuid.UUID
+    created_by: uuid.UUID
 
 
-class ItemsPublic(SQLModel):
-    data: list[ItemPublic]
+class ButtonsPublic(SQLModel):
+    data: list[ButtonPublic]
     count: int
 
 
-# Generic message
 class Message(SQLModel):
+    """
+    Generic message
+    """
+
     message: str
 
 
-# JSON payload containing access token
 class Token(SQLModel):
+    """
+    JSON payload containing access token
+    """
+
     access_token: str
     token_type: str = "bearer"
 
 
-# Contents of JWT token
 class TokenPayload(SQLModel):
+    """
+    Contents of JWT token
+    """
+
     sub: str | None = None
 
 

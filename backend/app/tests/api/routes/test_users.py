@@ -1,19 +1,27 @@
+"""
+Test user-related API endpoints.
+"""
+
 import uuid
 from unittest.mock import patch
 
-from fastapi.testclient import TestClient
-from sqlmodel import Session, select
-
+import pytest
 from app import crud
 from app.core.config import settings
 from app.core.security import verify_password
 from app.models import User, UserCreate
+from app.tests.utils.user import create_random_user, user_authentication_headers
 from app.tests.utils.utils import random_email, random_lower_string
+from fastapi.testclient import TestClient
+from sqlmodel import Session, select
 
 
 def test_get_users_superuser_me(
     client: TestClient, superuser_token_headers: dict[str, str]
 ) -> None:
+    """
+    Test the retrieval of the current user for a superuser.
+    """
     r = client.get(f"{settings.API_V1_STR}/users/me", headers=superuser_token_headers)
     current_user = r.json()
     assert current_user
@@ -25,6 +33,9 @@ def test_get_users_superuser_me(
 def test_get_users_normal_user_me(
     client: TestClient, normal_user_token_headers: dict[str, str]
 ) -> None:
+    """
+    Test the retrieval of the current user for a normal user.
+    """
     r = client.get(f"{settings.API_V1_STR}/users/me", headers=normal_user_token_headers)
     current_user = r.json()
     assert current_user
@@ -33,9 +44,12 @@ def test_get_users_normal_user_me(
     assert current_user["email"] == settings.EMAIL_TEST_USER
 
 
-def test_create_user_new_email(
+def test_create_user_new_email_as_superuser(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
+    """
+    Test the creation of a new user with a unique email.
+    """
     with (
         patch("app.utils.send_email", return_value=None),
         patch("app.core.config.settings.SMTP_HOST", "smtp.example.com"),
@@ -56,9 +70,12 @@ def test_create_user_new_email(
         assert user.email == created_user["email"]
 
 
-def test_get_existing_user(
+def test_get_existing_user_as_superuser(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
+    """
+    Test the retrieval of an existing user by ID.
+    """
     username = random_email()
     password = random_lower_string()
     user_in = UserCreate(email=username, password=password)
@@ -75,21 +92,40 @@ def test_get_existing_user(
     assert existing_user.email == api_user["email"]
 
 
-def test_get_existing_user_current_user(client: TestClient, db: Session) -> None:
+def test_get_non_existing_user_as_superuser(
+    client: TestClient, superuser_token_headers: dict[str, str]
+) -> None:
+    """
+    Test the retrieval of a non-existing user by ID.
+    """
+    r = client.get(
+        f"{settings.API_V1_STR}/users/{uuid.uuid4()}",
+        headers=superuser_token_headers,
+    )
+    assert r.status_code == 404
+    assert r.json() == {"detail": "User not found"}
+
+
+@pytest.mark.parametrize(
+    "is_superuser", (True, False), ids=lambda x: "superuser" if x else "normal user"
+)
+def test_get_existing_user_current_user(
+    client: TestClient,
+    db: Session,
+    is_superuser: bool,
+) -> None:
+    """
+    Test the retrieval of the current user by ID.
+    """
     username = random_email()
     password = random_lower_string()
-    user_in = UserCreate(email=username, password=password)
+    user_in = UserCreate(email=username, password=password, is_superuser=is_superuser)
     user = crud.create_user(session=db, user_create=user_in)
     user_id = user.id
 
-    login_data = {
-        "username": username,
-        "password": password,
-    }
-    r = client.post(f"{settings.API_V1_STR}/login/access-token", data=login_data)
-    tokens = r.json()
-    a_token = tokens["access_token"]
-    headers = {"Authorization": f"Bearer {a_token}"}
+    headers = user_authentication_headers(
+        client=client, email=username, password=password
+    )
 
     r = client.get(
         f"{settings.API_V1_STR}/users/{user_id}",
@@ -102,20 +138,39 @@ def test_get_existing_user_current_user(client: TestClient, db: Session) -> None
     assert existing_user.email == api_user["email"]
 
 
+@pytest.mark.parametrize(
+    "exists", [True, False], ids=lambda x: "Existing user" if x else "No user"
+)
 def test_get_existing_user_permissions_error(
-    client: TestClient, normal_user_token_headers: dict[str, str]
+    db: Session,
+    client: TestClient,
+    normal_user_token_headers: dict[str, str],
+    exists: bool,
 ) -> None:
+    """
+    Test the retrieval of an existing user by ID with insufficient
+    privileges.
+    """
+    if exists:
+        user = create_random_user(db)
+        user_id = user.id
+    else:
+        user_id = uuid.uuid4()
+
     r = client.get(
-        f"{settings.API_V1_STR}/users/{uuid.uuid4()}",
+        f"{settings.API_V1_STR}/users/{user_id}",
         headers=normal_user_token_headers,
     )
     assert r.status_code == 403
-    assert r.json() == {"detail": "The user doesn't have enough privileges"}
+    assert r.json() == {"detail": "User has insufficient privileges"}
 
 
-def test_create_user_existing_username(
+def test_create_user_existing_username_as_superuser(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
+    """
+    Test the creation of a user with an existing email.
+    """
     username = random_email()
     # username = email
     password = random_lower_string()
@@ -135,6 +190,9 @@ def test_create_user_existing_username(
 def test_create_user_by_normal_user(
     client: TestClient, normal_user_token_headers: dict[str, str]
 ) -> None:
+    """
+    Test the creation of a user by a normal user.
+    """
     username = random_email()
     password = random_lower_string()
     data = {"email": username, "password": password}
@@ -146,9 +204,12 @@ def test_create_user_by_normal_user(
     assert r.status_code == 403
 
 
-def test_retrieve_users(
+def test_retrieve_users_as_superuser(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
+    """
+    Test the retrieval of all users.
+    """
     username = random_email()
     password = random_lower_string()
     user_in = UserCreate(email=username, password=password)
@@ -171,6 +232,9 @@ def test_retrieve_users(
 def test_update_user_me(
     client: TestClient, normal_user_token_headers: dict[str, str], db: Session
 ) -> None:
+    """
+    Test the update of the current user's information.
+    """
     full_name = "Updated Name"
     email = random_email()
     data = {"full_name": full_name, "email": email}
@@ -191,9 +255,12 @@ def test_update_user_me(
     assert user_db.full_name == full_name
 
 
-def test_update_password_me(
+def test_update_password_me_as_superuser(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
+    """
+    Test the update of the current user's password.
+    """
     new_password = random_lower_string()
     data = {
         "current_password": settings.FIRST_SUPERUSER_PASSWORD,
@@ -230,9 +297,13 @@ def test_update_password_me(
     assert verify_password(settings.FIRST_SUPERUSER_PASSWORD, user_db.hashed_password)
 
 
-def test_update_password_me_incorrect_password(
+def test_update_password_me_incorrect_password_as_superuser(
     client: TestClient, superuser_token_headers: dict[str, str]
 ) -> None:
+    """
+    Test the update of the current user's password with an incorrect
+    current password.
+    """
     new_password = random_lower_string()
     data = {"current_password": new_password, "new_password": new_password}
     r = client.patch(
@@ -248,6 +319,10 @@ def test_update_password_me_incorrect_password(
 def test_update_user_me_email_exists(
     client: TestClient, normal_user_token_headers: dict[str, str], db: Session
 ) -> None:
+    """
+    Test the update of the current user's email to an existing
+    email.
+    """
     username = random_email()
     password = random_lower_string()
     user_in = UserCreate(email=username, password=password)
@@ -260,12 +335,16 @@ def test_update_user_me_email_exists(
         json=data,
     )
     assert r.status_code == 409
-    assert r.json()["detail"] == "User with this email already exists"
+    assert r.json()["detail"] == "A user with this email already exists"
 
 
-def test_update_password_me_same_password_error(
+def test_update_password_me_same_password_error_as_superuser(
     client: TestClient, superuser_token_headers: dict[str, str]
 ) -> None:
+    """
+    Test the update of the current user's password to the same
+    password.
+    """
     data = {
         "current_password": settings.FIRST_SUPERUSER_PASSWORD,
         "new_password": settings.FIRST_SUPERUSER_PASSWORD,
@@ -283,6 +362,9 @@ def test_update_password_me_same_password_error(
 
 
 def test_register_user(client: TestClient, db: Session) -> None:
+    """
+    Test the registration of a new user.
+    """
     username = random_email()
     password = random_lower_string()
     full_name = random_lower_string()
@@ -305,6 +387,9 @@ def test_register_user(client: TestClient, db: Session) -> None:
 
 
 def test_register_user_already_exists_error(client: TestClient) -> None:
+    """
+    Test the registration of a user with an existing email.
+    """
     password = random_lower_string()
     full_name = random_lower_string()
     data = {
@@ -317,12 +402,15 @@ def test_register_user_already_exists_error(client: TestClient) -> None:
         json=data,
     )
     assert r.status_code == 400
-    assert r.json()["detail"] == "The user with this email already exists in the system"
+    assert r.json()["detail"] == "A user with this email already exists in the system"
 
 
-def test_update_user(
+def test_update_user_as_superuser(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
+    """
+    Test the update of a user's information.
+    """
     username = random_email()
     password = random_lower_string()
     user_in = UserCreate(email=username, password=password)
@@ -346,9 +434,12 @@ def test_update_user(
     assert user_db.full_name == "Updated_full_name"
 
 
-def test_update_user_not_exists(
+def test_update_user_not_exists_as_superuser(
     client: TestClient, superuser_token_headers: dict[str, str]
 ) -> None:
+    """
+    Test the update of a user that does not exist.
+    """
     data = {"full_name": "Updated_full_name"}
     r = client.patch(
         f"{settings.API_V1_STR}/users/{uuid.uuid4()}",
@@ -356,12 +447,15 @@ def test_update_user_not_exists(
         json=data,
     )
     assert r.status_code == 404
-    assert r.json()["detail"] == "The user with this id does not exist in the system"
+    assert r.json()["detail"] == "A user with this id does not exist in the system"
 
 
-def test_update_user_email_exists(
+def test_update_user_email_exists_as_superuser(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
+    """
+    Test the update of a user's email to an existing email.
+    """
     username = random_email()
     password = random_lower_string()
     user_in = UserCreate(email=username, password=password)
@@ -379,10 +473,13 @@ def test_update_user_email_exists(
         json=data,
     )
     assert r.status_code == 409
-    assert r.json()["detail"] == "User with this email already exists"
+    assert r.json()["detail"] == "A user with this email already exists"
 
 
 def test_delete_user_me(client: TestClient, db: Session) -> None:
+    """
+    Test the deletion of the current user.
+    """
     username = random_email()
     password = random_lower_string()
     user_in = UserCreate(email=username, password=password)
@@ -416,6 +513,9 @@ def test_delete_user_me(client: TestClient, db: Session) -> None:
 def test_delete_user_me_as_superuser(
     client: TestClient, superuser_token_headers: dict[str, str]
 ) -> None:
+    """
+    Test the deletion of the current user as a superuser.
+    """
     r = client.delete(
         f"{settings.API_V1_STR}/users/me",
         headers=superuser_token_headers,
@@ -425,9 +525,12 @@ def test_delete_user_me_as_superuser(
     assert response["detail"] == "Super users are not allowed to delete themselves"
 
 
-def test_delete_user_super_user(
+def test_delete_user_as_superuser(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
+    """
+    Test the deletion of a user by a superuser.
+    """
     username = random_email()
     password = random_lower_string()
     user_in = UserCreate(email=username, password=password)
@@ -444,9 +547,12 @@ def test_delete_user_super_user(
     assert result is None
 
 
-def test_delete_user_not_found(
+def test_delete_user_not_found_as_superuser(
     client: TestClient, superuser_token_headers: dict[str, str]
 ) -> None:
+    """
+    Test the deletion of a user that does not exist.
+    """
     r = client.delete(
         f"{settings.API_V1_STR}/users/{uuid.uuid4()}",
         headers=superuser_token_headers,
@@ -455,12 +561,15 @@ def test_delete_user_not_found(
     assert r.json()["detail"] == "User not found"
 
 
-def test_delete_user_current_super_user_error(
+def test_delete_user_current_superuser_error(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
-    super_user = crud.get_user_by_email(session=db, email=settings.FIRST_SUPERUSER)
-    assert super_user
-    user_id = super_user.id
+    """
+    Test the deletion of the current superuser.
+    """
+    superuser = crud.get_user_by_email(session=db, email=settings.FIRST_SUPERUSER)
+    assert superuser
+    user_id = superuser.id
 
     r = client.delete(
         f"{settings.API_V1_STR}/users/{user_id}",
@@ -473,6 +582,10 @@ def test_delete_user_current_super_user_error(
 def test_delete_user_without_privileges(
     client: TestClient, normal_user_token_headers: dict[str, str], db: Session
 ) -> None:
+    """
+    Test the deletion of a user by a normal user without sufficient
+    privileges.
+    """
     username = random_email()
     password = random_lower_string()
     user_in = UserCreate(email=username, password=password)
@@ -483,4 +596,4 @@ def test_delete_user_without_privileges(
         headers=normal_user_token_headers,
     )
     assert r.status_code == 403
-    assert r.json()["detail"] == "The user doesn't have enough privileges"
+    assert r.json()["detail"] == "User has insufficient privileges"

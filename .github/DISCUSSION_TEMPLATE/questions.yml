@@ -106,7 +106,7 @@ body:
 
         You can find the Python version with:
 
-        ```bash
+        ```sh
         python --version
         ```
     validations:

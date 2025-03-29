@@ -1,19 +1,26 @@
-from typing import Any
+"""
+Routes for private API endpoints, such as user creation. These endpoints
+are only available when the environment is set to "local".
+"""
 
-from fastapi import APIRouter
-from pydantic import BaseModel
+from typing import Any
 
 from app.api.deps import SessionDep
 from app.core.security import get_password_hash
-from app.models import (
-    User,
-    UserPublic,
-)
+from app.models import User, UserPublic
+from fastapi import APIRouter
+from pydantic import BaseModel
 
 router = APIRouter(tags=["private"], prefix="/private")
 
 
 class PrivateUserCreate(BaseModel):
+    """
+    Pydantic model to speficy the required fields for user creation.
+
+    TODO: consider moving this to the models module?
+    """
+
     email: str
     password: str
     full_name: str

@@ -1,11 +1,17 @@
-from fastapi.testclient import TestClient
-from sqlmodel import Session, select
+"""
+Tests for the private API routes.
+"""
 
 from app.core.config import settings
 from app.models import User
+from fastapi.testclient import TestClient
+from sqlmodel import Session, select
 
 
 def test_create_user(client: TestClient, db: Session) -> None:
+    """
+    Test the creation of a new user.
+    """
     r = client.post(
         f"{settings.API_V1_STR}/private/users/",
         json={

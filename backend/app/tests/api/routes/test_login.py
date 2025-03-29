@@ -1,7 +1,8 @@
-from unittest.mock import patch
+"""
+Tests for login and password recovery functionality.
+"""
 
-from fastapi.testclient import TestClient
-from sqlmodel import Session
+from unittest.mock import patch
 
 from app.core.config import settings
 from app.core.security import verify_password
@@ -10,9 +11,14 @@ from app.models import UserCreate
 from app.tests.utils.user import user_authentication_headers
 from app.tests.utils.utils import random_email, random_lower_string
 from app.utils import generate_password_reset_token
+from fastapi.testclient import TestClient
+from sqlmodel import Session
 
 
 def test_get_access_token(client: TestClient) -> None:
+    """
+    Test the retrieval of an access token using valid credentials.
+    """
     login_data = {
         "username": settings.FIRST_SUPERUSER,
         "password": settings.FIRST_SUPERUSER_PASSWORD,
@@ -25,6 +31,9 @@ def test_get_access_token(client: TestClient) -> None:
 
 
 def test_get_access_token_incorrect_password(client: TestClient) -> None:
+    """
+    Test the retrieval of an access token using incorrect credentials.
+    """
     login_data = {
         "username": settings.FIRST_SUPERUSER,
         "password": "incorrect",
@@ -36,6 +45,9 @@ def test_get_access_token_incorrect_password(client: TestClient) -> None:
 def test_use_access_token(
     client: TestClient, superuser_token_headers: dict[str, str]
 ) -> None:
+    """
+    Test the use of an access token to access a protected route.
+    """
     r = client.post(
         f"{settings.API_V1_STR}/login/test-token",
         headers=superuser_token_headers,
@@ -48,6 +60,9 @@ def test_use_access_token(
 def test_recovery_password(
     client: TestClient, normal_user_token_headers: dict[str, str]
 ) -> None:
+    """
+    Test the password recovery email sending functionality.
+    """
     with (
         patch("app.core.config.settings.SMTP_HOST", "smtp.example.com"),
         patch("app.core.config.settings.SMTP_USER", "admin@example.com"),
@@ -64,6 +79,9 @@ def test_recovery_password(
 def test_recovery_password_user_not_exits(
     client: TestClient, normal_user_token_headers: dict[str, str]
 ) -> None:
+    """
+    Test the password recovery functionality for a non-existent user.
+    """
     email = "jVgQr@example.com"
     r = client.post(
         f"{settings.API_V1_STR}/password-recovery/{email}",
@@ -73,6 +91,9 @@ def test_recovery_password_user_not_exits(
 
 
 def test_reset_password(client: TestClient, db: Session) -> None:
+    """
+    Test the password reset functionality.
+    """
     email = random_email()
     password = random_lower_string()
     new_password = random_lower_string()
@@ -105,6 +126,9 @@ def test_reset_password(client: TestClient, db: Session) -> None:
 def test_reset_password_invalid_token(
     client: TestClient, superuser_token_headers: dict[str, str]
 ) -> None:
+    """
+    Test the password reset functionality with an invalid token.
+    """
     data = {"new_password": "changethis", "token": "invalid"}
     r = client.post(
         f"{settings.API_V1_STR}/reset-password/",

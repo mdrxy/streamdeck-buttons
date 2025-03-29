@@ -1,13 +1,19 @@
-from fastapi.encoders import jsonable_encoder
-from sqlmodel import Session
+"""
+Tests for CRUD operations on User model.
+"""
 
 from app import crud
 from app.core.security import verify_password
 from app.models import User, UserCreate, UserUpdate
 from app.tests.utils.utils import random_email, random_lower_string
+from fastapi.encoders import jsonable_encoder
+from sqlmodel import Session
 
 
 def test_create_user(db: Session) -> None:
+    """
+    Test the creation of a new user.
+    """
     email = random_email()
     password = random_lower_string()
     user_in = UserCreate(email=email, password=password)
@@ -17,6 +23,9 @@ def test_create_user(db: Session) -> None:
 
 
 def test_authenticate_user(db: Session) -> None:
+    """
+    Test the authentication of a user.
+    """
     email = random_email()
     password = random_lower_string()
     user_in = UserCreate(email=email, password=password)
@@ -27,6 +36,9 @@ def test_authenticate_user(db: Session) -> None:
 
 
 def test_not_authenticate_user(db: Session) -> None:
+    """
+    Test the failure of user authentication with incorrect credentials.
+    """
     email = random_email()
     password = random_lower_string()
     user = crud.authenticate(session=db, email=email, password=password)
@@ -34,6 +46,9 @@ def test_not_authenticate_user(db: Session) -> None:
 
 
 def test_check_if_user_is_active(db: Session) -> None:
+    """
+    Test whether a user is active.
+    """
     email = random_email()
     password = random_lower_string()
     user_in = UserCreate(email=email, password=password)
@@ -42,6 +57,9 @@ def test_check_if_user_is_active(db: Session) -> None:
 
 
 def test_check_if_user_is_active_inactive(db: Session) -> None:
+    """
+    Test whether an inactive user is active.
+    """
     email = random_email()
     password = random_lower_string()
     user_in = UserCreate(email=email, password=password, disabled=True)
@@ -50,6 +68,9 @@ def test_check_if_user_is_active_inactive(db: Session) -> None:
 
 
 def test_check_if_user_is_superuser(db: Session) -> None:
+    """
+    Test whether a user is a superuser.
+    """
     email = random_email()
     password = random_lower_string()
     user_in = UserCreate(email=email, password=password, is_superuser=True)
@@ -58,6 +79,9 @@ def test_check_if_user_is_superuser(db: Session) -> None:
 
 
 def test_check_if_user_is_superuser_normal_user(db: Session) -> None:
+    """
+    Test whether a normal user is a superuser.
+    """
     username = random_email()
     password = random_lower_string()
     user_in = UserCreate(email=username, password=password)
@@ -66,6 +90,9 @@ def test_check_if_user_is_superuser_normal_user(db: Session) -> None:
 
 
 def test_get_user(db: Session) -> None:
+    """
+    Test the retrieval of a user by ID.
+    """
     password = random_lower_string()
     username = random_email()
     user_in = UserCreate(email=username, password=password, is_superuser=True)
@@ -77,6 +104,9 @@ def test_get_user(db: Session) -> None:
 
 
 def test_update_user(db: Session) -> None:
+    """
+    Test the update of a user.
+    """
     password = random_lower_string()
     email = random_email()
     user_in = UserCreate(email=email, password=password, is_superuser=True)
