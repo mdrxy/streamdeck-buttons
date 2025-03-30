@@ -3,6 +3,7 @@ Routes for Button CRUD operations.
 """
 
 import uuid
+from datetime import datetime, timezone
 from typing import Any
 
 from app.api.deps import CurrentUser, SessionDep
@@ -15,9 +16,14 @@ from app.models import (
     Message,
 )
 from fastapi import APIRouter, HTTPException, status
+from pydantic import BaseModel
 from sqlmodel import func, select
 
 router = APIRouter(prefix="/buttons", tags=["buttons"])
+
+
+class RetireButtonRequest(BaseModel):
+    retired_at: datetime | None = None  # allow unretire if needed
 
 
 @router.get("/", response_model=ButtonsPublic)
@@ -139,3 +145,50 @@ def delete_button(
     session.delete(button)
     session.commit()
     return Message(message="Button deleted successfully")
+
+
+@router.get("/{id}/increment", response_model=ButtonPublic)
+def increment_usage(
+    session: SessionDep,
+    id: uuid.UUID,  # pylint: disable=redefined-builtin
+) -> Any:
+    """
+    Increment the usage count of a Button.
+    """
+    button = session.get(Button, id)
+    if not button:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Button not found")
+    if button.retired_at is not None:
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN,
+            detail="Button is retired and cannot be incremented",
+        )
+    button.usage_count += 1
+    session.add(button)
+    session.commit()
+    session.refresh(button)
+    return button
+
+
+@router.delete("/{id}/retire", response_model=ButtonPublic)
+def retire_button(
+    session: SessionDep,
+    current_user: CurrentUser,
+    id: uuid.UUID,  # pylint: disable=redefined-builtin
+    retire_req: RetireButtonRequest,
+) -> Any:
+    """
+    Retire a Button, if the user has permission.
+    """
+    button = session.get(Button, id)
+    if not button:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Button not found")
+    if not current_user.is_superuser and button.created_by != current_user.id:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST, detail="Insufficient permissions"
+        )
+    button.retired_at = retire_req.retired_at or datetime.now(timezone.utc)
+    session.add(button)
+    session.commit()
+    session.refresh(button)
+    return button
