@@ -107,19 +107,14 @@ class ButtonBase(SQLModel):
     """
 
     type: str = Field(
-        ..., max_length=50, description="Button type (e.g. PSA, ID, SFX, etc.)"
-    )  # TODO: add enum values?
+        ..., max_length=50, description="Button type (e.g. PSA, ID, SFX)"
+    )  # TODO: use enum values?
     title: str = Field(min_length=1, max_length=255)
     description: str | None = Field(default=None, max_length=255)
-    usage_count: int = Field(default=0)
     duration: float | None = Field(
         default=None, description="Seconds, if relevant for PSA/ID/SFX"
     )
     source: str | None = Field(default=None, max_length=255)
-    # We can store the "retired_at" as null if not retired
-    retired_at: datetime | None = Field(
-        default=None, description="When was this button retired?"
-    )
 
 
 class ButtonCreate(ButtonBase):
@@ -135,10 +130,11 @@ class ButtonUpdate(ButtonBase):
     Properties to receive on Button update.
     """
 
-    # All fields optional in the update
     type: str | None = Field(default=None, max_length=50)
-    # We might want to exclude usage_count updates via the API, since
-    # they should be calculated automatically
+    title: str | None = Field(default=None, max_length=255)
+    description: str | None = Field(default=None, max_length=255)
+    duration: float | None = Field(default=None)
+    source: str | None = Field(default=None, max_length=255)
 
 
 class Button(ButtonBase, table=True):
@@ -147,7 +143,6 @@ class Button(ButtonBase, table=True):
     """
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True, index=True)
-
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),
         sa_column=Column(
@@ -165,7 +160,6 @@ class Button(ButtonBase, table=True):
             nullable=False,
         ),
     )
-
     # Foreign key to user
     # Currently, if the user is deleted, the button will be deleted as
     # well (as well as all buttons created by that user)
@@ -175,6 +169,8 @@ class Button(ButtonBase, table=True):
     )
     # Load the user who created the button, via the relationship:
     creator: Mapped["User"] = Relationship(back_populates="buttons")
+    usage_count: int = Field(default=0)
+    retired_at: datetime | None = Field(default=None)
 
 
 class ButtonPublic(ButtonBase):
@@ -184,6 +180,8 @@ class ButtonPublic(ButtonBase):
 
     id: uuid.UUID
     created_by: uuid.UUID
+    usage_count: int
+    retired_at: datetime | None
 
 
 class ButtonsPublic(SQLModel):
