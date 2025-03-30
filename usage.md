@@ -63,8 +63,12 @@ To access it, go to <http://localhost:8080>.
 
 ### MailCatcher
 
+Access at <http://localhost:1080>.
+
 MailCatcher is a simple SMTP server that catches emails sent to it and displays them in a web interface. This is useful for testing email functionality without sending real emails over a live SMTP server.
 
 ### Traefik
+
+Access at <http://localhost:8090>.
 
 Traefik is a reverse proxy and load balancer that provides a web UI to monitor the services running in your Docker containers. It automatically detects new services and routes traffic to them based on their configuration.

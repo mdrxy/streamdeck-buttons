@@ -1,3 +1,7 @@
+"""
+Models for SQLAlchemy and Pydantic.
+"""
+
 import uuid
 from datetime import datetime, timezone
 
@@ -6,10 +10,12 @@ from sqlalchemy import text
 from sqlalchemy.orm import Mapped
 from sqlmodel import Column, DateTime, Field, Relationship, SQLModel
 
+# USER -----------------------------------------------------------------
+
 
 class UserBase(SQLModel):
     """
-    Shared User properties
+    Shared User properties.
     """
 
     email: EmailStr = Field(unique=True, index=True, max_length=255)
@@ -20,7 +26,7 @@ class UserBase(SQLModel):
 
 class UserCreate(UserBase):
     """
-    Properties to receive via API on User creation
+    Properties to receive via API on User creation.
     """
 
     password: str = Field(min_length=8, max_length=40)
@@ -28,7 +34,7 @@ class UserCreate(UserBase):
 
 class UserRegister(SQLModel):
     """
-    Properties to receive via API on registration
+    Properties to receive via API on registration.
     """
 
     email: EmailStr = Field(max_length=255)
@@ -38,7 +44,7 @@ class UserRegister(SQLModel):
 
 class UserUpdate(UserBase):
     """
-    Properties to receive via API on update, all are optional
+    Properties to receive via API on update, all are optional.
     """
 
     email: EmailStr | None = Field(default=None, max_length=255)  # type: ignore
@@ -56,7 +62,7 @@ class UserUpdateMe(SQLModel):
 
 class UpdatePassword(SQLModel):
     """
-    Properties to receive via API on password update
+    Properties to receive via API on password update.
     """
 
     current_password: str = Field(min_length=8, max_length=40)
@@ -65,7 +71,7 @@ class UpdatePassword(SQLModel):
 
 class User(UserBase, table=True):
     """
-    Database model, database table inferred from class name
+    Database model, database table inferred from class name.
     """
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
@@ -77,20 +83,27 @@ class User(UserBase, table=True):
 
 class UserPublic(UserBase):
     """
-    Properties to return via API, `id` is always required
+    Properties to return via API, `id` is always required.
     """
 
     id: uuid.UUID
 
 
 class UsersPublic(SQLModel):
+    """
+    Wrapper for a list of all users that includes a count.
+    """
+
     data: list[UserPublic]
     count: int
 
 
+# BUTTON ---------------------------------------------------------------
+
+
 class ButtonBase(SQLModel):
     """
-    Shared properties for all Button models
+    Shared properties for all Button models.
     """
 
     type: str = Field(
@@ -111,16 +124,15 @@ class ButtonBase(SQLModel):
 
 class ButtonCreate(ButtonBase):
     """
-    Properties to receive on Button creation
+    Properties to receive on Button creation.
     """
 
-    # 'created_by' is derived from the logged-in user, so not accepted here
-    pass
+    # 'created_by' derived from the logged-in user, so not accepted here
 
 
 class ButtonUpdate(ButtonBase):
     """
-    Properties to receive on Button update
+    Properties to receive on Button update.
     """
 
     # All fields optional in the update
@@ -131,7 +143,7 @@ class ButtonUpdate(ButtonBase):
 
 class Button(ButtonBase, table=True):
     """
-    Button database model, database table inferred from class name
+    Button database model, database table inferred from class name.
     """
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True, index=True)
@@ -155,8 +167,9 @@ class Button(ButtonBase, table=True):
     )
 
     # Foreign key to user
-    # Currently, if the user is deleted, the button will be deleted as well (as well as all buttons
-    # created by that user) TODO: set to a default "deleted" user instead?
+    # Currently, if the user is deleted, the button will be deleted as
+    # well (as well as all buttons created by that user)
+    # TODO: set to a default "deleted" user instead?
     created_by: uuid.UUID = Field(
         foreign_key="user.id", nullable=False, ondelete="CASCADE"
     )
@@ -166,7 +179,7 @@ class Button(ButtonBase, table=True):
 
 class ButtonPublic(ButtonBase):
     """
-    Button properties to return via API, `id` is always required
+    Button properties to return via API, `id` is always required.
     """
 
     id: uuid.UUID
@@ -174,21 +187,31 @@ class ButtonPublic(ButtonBase):
 
 
 class ButtonsPublic(SQLModel):
+    """
+    Wrapper for a list of all buttons that includes a count.
+    """
+
     data: list[ButtonPublic]
     count: int
 
 
+# MESSAGE --------------------------------------------------------------
+
+
 class Message(SQLModel):
     """
-    Generic message
+    Generic message used in endpoint responses.
     """
 
     message: str
 
 
+# AUTH -----------------------------------------------------------------
+
+
 class Token(SQLModel):
     """
-    JSON payload containing access token
+    JSON payload containing access token.
     """
 
     access_token: str
@@ -197,12 +220,16 @@ class Token(SQLModel):
 
 class TokenPayload(SQLModel):
     """
-    Contents of JWT token
+    Contents of JWT token.
     """
 
     sub: str | None = None
 
 
 class NewPassword(SQLModel):
+    """
+    Input string used for password resets.
+    """
+
     token: str
     new_password: str = Field(min_length=8, max_length=40)

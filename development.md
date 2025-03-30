@@ -12,21 +12,9 @@ Now you can open your browser and interact with these URLs:
 
 - Frontend, built with Docker, with routes handled based on the path: <http://localhost:5173>
 - Backend, JSON based web API based on OpenAPI: <http://localhost:8000>
-- Automatic interactive documentation with Swagger UI (from the OpenAPI backend): <http://localhost:8000/docs>
+  - Automatic interactive documentation with Swagger UI (from the OpenAPI backend): <http://localhost:8000/docs>
 - Adminer, database web administration: <http://localhost:8080>
 - Traefik UI, to see how the routes are being handled by the proxy: <http://localhost:8090>
-
-To check the logs, run:
-
-```sh
-docker compose logs
-```
-
-To check the logs of a specific service, add the name of the service, e.g.:
-
-```sh
-docker compose logs backend
-```
 
 ## Local Development
 
@@ -34,9 +22,9 @@ The Docker Compose files are configured so that each of the services is availabl
 
 For the backend and frontend, they use the same port that would be used by their local development server, so, the backend is at `http://localhost:8000` and the frontend at `http://localhost:5173`.
 
-This way, you could turn off a Docker Compose service and start its local development service, and everything would keep working, because it all uses the same ports.
+This way, you could turn off a Docker Compose service and start its local development service, and everything would keep working, because they use the same ports.
 
-For example, you can stop that `frontend` service in the Docker Compose, in another terminal, run:
+For example, you can stop the  `frontend`:
 
 ```sh
 docker compose stop frontend
@@ -98,14 +86,6 @@ After changing variables, make sure you restart the stack:
 ```sh
 docker compose watch
 ```
-
-## The .env file
-
-The `.env` file is the one that contains all your configurations, generated keys and passwords, etc.
-
-Depending on your workflow, you could want to exclude it from Git, for example if your project is public. In that case, you would have to make sure to set up a way for your CI tools to obtain it while building or deploying your project.
-
-One way to do it could be to add each environment variable to your CI/CD system, and updating the `docker-compose.yml` file to read that specific env var instead of reading the `.env` file.
 
 ## Pre-commits and code linting
 

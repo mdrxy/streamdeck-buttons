@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is the FastAPI backend service for the Stream Deck Button Tracker project. It handles API requests, authentication, and database interactions. It is designed to work with the frontend and other components of the project.
+The backend handles API requests, authentication, and database interactions.
 
 ## Requirements
 
@@ -97,9 +97,7 @@ bash ./scripts/test.sh
 
 During development, modify and add tests in `./backend/app/tests/`.
 
-### Test a Running Stack
-
-If your stack is already up and you just want to run the tests, you can use:
+If your stack is already up, you can run tests by using:
 
 ```sh
 docker compose exec backend bash scripts/tests-start.sh
