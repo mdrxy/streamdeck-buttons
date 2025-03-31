@@ -90,11 +90,6 @@ def read_button(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Button not found"
         )
-    usage_count = session.exec(
-        select(func.count()).where(  # pylint: disable=E1102
-            ButtonUse.button_id == button.id
-        )
-    ).one()
 
     return button
 
