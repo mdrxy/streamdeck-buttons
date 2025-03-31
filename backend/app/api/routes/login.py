@@ -2,6 +2,7 @@
 Routes for login, password recovery, and token management.
 """
 
+import logging
 from datetime import timedelta
 from typing import Annotated, Any
 
@@ -21,6 +22,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import HTMLResponse
 from fastapi.security import OAuth2PasswordRequestForm
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(tags=["login"])
 
 
@@ -29,28 +32,36 @@ def login_access_token(
     session: SessionDep, form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
 ) -> Token:
     """
-    OAuth2 compatible token login; get an access token for future
-    requests.
+    OAuth2 compatible token login; get an access token for future requests.
     """
-    user = crud.authenticate(
-        session=session, email=form_data.username, password=form_data.password
-    )
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Incorrect email or password",
+    try:
+        user = crud.authenticate(
+            session=session, email=form_data.username, password=form_data.password
         )
-    if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Inactive user - please contact admin",
-        )
-    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    return Token(
-        access_token=security.create_access_token(
+        if not user:
+            logger.warning("Login failed: User %s doesn't exist", form_data.username)
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Incorrect email or password",
+            )
+        if not user.is_active:
+            logger.warning("Failed login attempt: inactive user %s", form_data.username)
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Inactive user - please contact admin",
+            )
+        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        token = security.create_access_token(
             user.id, expires_delta=access_token_expires
         )
-    )
+        logger.info("User %s successfully logged in", form_data.username)
+        return Token(access_token=token)
+    except Exception as e:
+        logger.exception("Error during login for user %s", form_data.username)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An unexpected error occurred: {e}",
+        ) from e
 
 
 @router.post("/login/test-token", response_model=UserPublic)

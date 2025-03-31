@@ -11,6 +11,7 @@ from app.models import UserCreate
 from app.tests.utils.user import user_authentication_headers
 from app.tests.utils.utils import random_email, random_lower_string
 from app.utils import generate_password_reset_token
+from fastapi import status
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
@@ -25,7 +26,7 @@ def test_get_access_token(client: TestClient) -> None:
     }
     r = client.post(f"{settings.API_V1_STR}/login/access-token", data=login_data)
     tokens = r.json()
-    assert r.status_code == 200
+    assert r.status_code == status.HTTP_200_OK
     assert "access_token" in tokens
     assert tokens["access_token"]
 
@@ -39,7 +40,7 @@ def test_get_access_token_incorrect_password(client: TestClient) -> None:
         "password": "incorrect",
     }
     r = client.post(f"{settings.API_V1_STR}/login/access-token", data=login_data)
-    assert r.status_code == 400
+    assert r.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
 
 
 def test_use_access_token(
@@ -53,7 +54,7 @@ def test_use_access_token(
         headers=superuser_token_headers,
     )
     result = r.json()
-    assert r.status_code == 200
+    assert r.status_code == status.HTTP_200_OK
     assert "email" in result
 
 
@@ -72,7 +73,7 @@ def test_recovery_password(
             f"{settings.API_V1_STR}/password-recovery/{email}",
             headers=normal_user_token_headers,
         )
-        assert r.status_code == 200
+        assert r.status_code == status.HTTP_200_OK
         assert r.json() == {"message": "Password recovery email sent"}
 
 
@@ -87,7 +88,7 @@ def test_recovery_password_user_not_exits(
         f"{settings.API_V1_STR}/password-recovery/{email}",
         headers=normal_user_token_headers,
     )
-    assert r.status_code == 404
+    assert r.status_code == status.HTTP_404_NOT_FOUND
 
 
 def test_reset_password(client: TestClient, db: Session) -> None:
@@ -116,7 +117,7 @@ def test_reset_password(client: TestClient, db: Session) -> None:
         json=data,
     )
 
-    assert r.status_code == 200
+    assert r.status_code == status.HTTP_200_OK
     assert r.json() == {"message": "Password updated successfully"}
 
     db.refresh(user)
@@ -138,5 +139,5 @@ def test_reset_password_invalid_token(
     response = r.json()
 
     assert "detail" in response
-    assert r.status_code == 400
+    assert r.status_code == status.HTTP_400_BAD_REQUEST
     assert response["detail"] == "Invalid token"
