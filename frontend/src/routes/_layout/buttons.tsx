@@ -11,10 +11,10 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { FiSearch } from "react-icons/fi"
 import { z } from "zod"
 
-import { ItemsService } from "@/client"
-import { ItemActionsMenu } from "@/components/Common/ItemActionsMenu"
-import AddItem from "@/components/Items/AddItem"
-import PendingItems from "@/components/Pending/PendingItems"
+import { ButtonsService } from "@/client"
+import { ButtonActionsMenu } from "@/components/Common/ButtonActionsMenu"
+import AddButton from "@/components/Buttons/AddButton"
+import PendingButtons from "@/components/Pending/PendingButtons"
 import {
   PaginationItems,
   PaginationNextTrigger,
@@ -22,31 +22,31 @@ import {
   PaginationRoot,
 } from "@/components/ui/pagination.tsx"
 
-const itemsSearchSchema = z.object({
+const buttonsSearchSchema = z.object({
   page: z.number().catch(1),
 })
 
 const PER_PAGE = 5
 
-function getItemsQueryOptions({ page }: { page: number }) {
+function getButtonsQueryOptions({ page }: { page: number }) {
   return {
     queryFn: () =>
-      ItemsService.readItems({ skip: (page - 1) * PER_PAGE, limit: PER_PAGE }),
-    queryKey: ["items", { page }],
+      ButtonsService.listAllButtons({ skip: (page - 1) * PER_PAGE, limit: PER_PAGE }),
+    queryKey: ["buttons", { page }],
   }
 }
 
-export const Route = createFileRoute("/_layout/items")({
-  component: Items,
-  validateSearch: (search) => itemsSearchSchema.parse(search),
+export const Route = createFileRoute("/_layout/buttons")({
+  component: Buttons,
+  validateSearch: (search) => buttonsSearchSchema.parse(search),
 })
 
-function ItemsTable() {
+function ButtonsTable() {
   const navigate = useNavigate({ from: Route.fullPath })
   const { page } = Route.useSearch()
 
   const { data, isLoading, isPlaceholderData } = useQuery({
-    ...getItemsQueryOptions({ page }),
+    ...getButtonsQueryOptions({ page }),
     placeholderData: (prevData) => prevData,
   })
 
@@ -55,14 +55,14 @@ function ItemsTable() {
       search: (prev: { [key: string]: string }) => ({ ...prev, page }),
     })
 
-  const items = data?.data.slice(0, PER_PAGE) ?? []
+  const buttons = data?.data.slice(0, PER_PAGE) ?? []
   const count = data?.count ?? 0
 
   if (isLoading) {
-    return <PendingItems />
+    return <PendingButtons />
   }
 
-  if (items.length === 0) {
+  if (buttons.length === 0) {
     return (
       <EmptyState.Root>
         <EmptyState.Content>
@@ -92,23 +92,23 @@ function ItemsTable() {
           </Table.Row>
         </Table.Header>
         <Table.Body>
-          {items?.map((item) => (
-            <Table.Row key={item.id} opacity={isPlaceholderData ? 0.5 : 1}>
+          {buttons?.map((button) => (
+            <Table.Row key={button.id} opacity={isPlaceholderData ? 0.5 : 1}>
               <Table.Cell truncate maxW="sm">
-                {item.id}
+                {button.id}
               </Table.Cell>
               <Table.Cell truncate maxW="sm">
-                {item.title}
+                {button.title}
               </Table.Cell>
               <Table.Cell
-                color={!item.description ? "gray" : "inherit"}
+                color={!button.description ? "gray" : "inherit"}
                 truncate
                 maxW="30%"
               >
-                {item.description || "N/A"}
+                {button.description || "N/A"}
               </Table.Cell>
               <Table.Cell>
-                <ItemActionsMenu item={item} />
+                <ButtonActionsMenu button={button} />
               </Table.Cell>
             </Table.Row>
           ))}
@@ -131,14 +131,14 @@ function ItemsTable() {
   )
 }
 
-function Items() {
+function Buttons() {
   return (
     <Container maxW="full">
       <Heading size="lg" pt={12}>
         Button Management
       </Heading>
-      <AddItem />
-      <ItemsTable />
+      <AddButton />
+      <ButtonsTable />
     </Container>
   )
 }

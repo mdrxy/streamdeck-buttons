@@ -1,19 +1,17 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { type SubmitHandler, useForm } from "react-hook-form"
-
 import {
   Button,
+  ButtonGroup,
   DialogActionTrigger,
-  DialogTitle,
   Input,
   Text,
   VStack,
 } from "@chakra-ui/react"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
-import { FaPlus } from "react-icons/fa"
+import { type SubmitHandler, useForm } from "react-hook-form"
+import { FaExchangeAlt } from "react-icons/fa"
 
-import { type ItemCreate, ItemsService } from "@/client"
-import type { ApiError } from "@/client/core/ApiError"
+import { type ApiError, type ButtonPublic, ButtonsService } from "@/client"
 import useCustomToast from "@/hooks/useCustomToast"
 import { handleError } from "@/utils"
 import {
@@ -23,11 +21,21 @@ import {
   DialogFooter,
   DialogHeader,
   DialogRoot,
+  DialogTitle,
   DialogTrigger,
 } from "../ui/dialog"
 import { Field } from "../ui/field"
 
-const AddItem = () => {
+interface EditButtonProps {
+  button: ButtonPublic
+}
+
+interface ButtonUpdateForm {
+  title: string
+  description?: string
+}
+
+const EditButton = ({ button }: EditButtonProps) => {
   const [isOpen, setIsOpen] = useState(false)
   const queryClient = useQueryClient()
   const { showSuccessToast } = useCustomToast()
@@ -35,33 +43,33 @@ const AddItem = () => {
     register,
     handleSubmit,
     reset,
-    formState: { errors, isValid, isSubmitting },
-  } = useForm<ItemCreate>({
+    formState: { errors, isSubmitting },
+  } = useForm<ButtonUpdateForm>({
     mode: "onBlur",
     criteriaMode: "all",
     defaultValues: {
-      title: "",
-      description: "",
+      ...button,
+      description: button.description ?? undefined,
     },
   })
 
   const mutation = useMutation({
-    mutationFn: (data: ItemCreate) =>
-      ItemsService.createItem({ requestBody: data }),
-    onSuccess: () => {
-      showSuccessToast("Item created successfully.")
-      reset()
+    mutationFn: (data: ButtonUpdateForm) =>
+      ButtonsService.updateButton({ id: button.id, requestBody: data }),
+    onSuccess: (_data: ButtonPublic, variables: ButtonUpdateForm) => {
+      showSuccessToast("Button updated successfully.")
+      reset(variables)
       setIsOpen(false)
     },
     onError: (err: ApiError) => {
       handleError(err)
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["items"] })
+      queryClient.invalidateQueries({ queryKey: ["buttons"] })
     },
   })
 
-  const onSubmit: SubmitHandler<ItemCreate> = (data) => {
+  const onSubmit: SubmitHandler<ButtonUpdateForm> = async (data) => {
     mutation.mutate(data)
   }
 
@@ -73,18 +81,18 @@ const AddItem = () => {
       onOpenChange={({ open }) => setIsOpen(open)}
     >
       <DialogTrigger asChild>
-        <Button value="add-item" my={4}>
-          <FaPlus fontSize="16px" />
-          Add Item
+        <Button variant="ghost">
+          <FaExchangeAlt fontSize="16px" />
+          Edit Button
         </Button>
       </DialogTrigger>
       <DialogContent>
         <form onSubmit={handleSubmit(onSubmit)}>
           <DialogHeader>
-            <DialogTitle>Add Item</DialogTitle>
+            <DialogTitle>Edit Button</DialogTitle>
           </DialogHeader>
           <DialogBody>
-            <Text mb={4}>Fill in the details to add a new item.</Text>
+            <Text mb={4}>Update the button details below.</Text>
             <VStack gap={4}>
               <Field
                 required
@@ -95,7 +103,7 @@ const AddItem = () => {
                 <Input
                   id="title"
                   {...register("title", {
-                    required: "Title is required.",
+                    required: "Title is required",
                   })}
                   placeholder="Title"
                   type="text"
@@ -118,23 +126,20 @@ const AddItem = () => {
           </DialogBody>
 
           <DialogFooter gap={2}>
-            <DialogActionTrigger asChild>
-              <Button
-                variant="subtle"
-                colorPalette="gray"
-                disabled={isSubmitting}
-              >
-                Cancel
+            <ButtonGroup>
+              <DialogActionTrigger asChild>
+                <Button
+                  variant="subtle"
+                  colorPalette="gray"
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </Button>
+              </DialogActionTrigger>
+              <Button variant="solid" type="submit" loading={isSubmitting}>
+                Save
               </Button>
-            </DialogActionTrigger>
-            <Button
-              variant="solid"
-              type="submit"
-              disabled={!isValid}
-              loading={isSubmitting}
-            >
-              Save
-            </Button>
+            </ButtonGroup>
           </DialogFooter>
         </form>
         <DialogCloseTrigger />
@@ -143,4 +148,4 @@ const AddItem = () => {
   )
 }
 
-export default AddItem
+export default EditButton
