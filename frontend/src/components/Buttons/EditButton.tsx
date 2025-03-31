@@ -95,6 +95,20 @@ const EditButton = ({ button }: EditButtonProps) => {
             <Text mb={4}>Update the button details below.</Text>
             <VStack gap={4}>
               <Field
+                invalid={!!errors.type}
+                errorText={errors.type?.message}
+                label="Type"
+              >
+                <Input
+                  id="type"
+                  {...register("type", {
+                    required: "Type is required.",
+                  })}
+                  placeholder="Type"
+                  type="text"
+                />
+              </Field>
+              <Field
                 required
                 invalid={!!errors.title}
                 errorText={errors.title?.message}
@@ -103,13 +117,12 @@ const EditButton = ({ button }: EditButtonProps) => {
                 <Input
                   id="title"
                   {...register("title", {
-                    required: "Title is required",
+                    required: "Title is required.",
                   })}
                   placeholder="Title"
                   type="text"
                 />
               </Field>
-
               <Field
                 invalid={!!errors.description}
                 errorText={errors.description?.message}
@@ -119,6 +132,36 @@ const EditButton = ({ button }: EditButtonProps) => {
                   id="description"
                   {...register("description")}
                   placeholder="Description"
+                  type="text"
+                />
+              </Field>
+              <Field
+                invalid={!!errors.source}
+                errorText={errors.source?.message}
+                label="Source"
+              >
+                <Input
+                  id="source"
+                  {...register("source")}
+                  placeholder="Source"
+                  type="text"
+                />
+              </Field>
+              <Field
+                invalid={!!errors.duration}
+                errorText={errors.duration?.message}
+                label="Duration"
+              >
+                <Input
+                  id="duration"
+                  {...register("duration", {
+                    valueAsNumber: true,
+                    validate: {
+                      isPositive: (value) =>
+                        (value != null && Number(value) > 0) || "Duration must be a positive number.",
+                    },
+                  })}
+                  placeholder="Duration"
                   type="text"
                 />
               </Field>

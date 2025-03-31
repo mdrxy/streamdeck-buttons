@@ -86,8 +86,11 @@ function ButtonsTable() {
         <Table.Header>
           <Table.Row>
             <Table.ColumnHeader w="sm">ID</Table.ColumnHeader>
+            <Table.ColumnHeader w="sm">Type</Table.ColumnHeader>
             <Table.ColumnHeader w="sm">Title</Table.ColumnHeader>
             <Table.ColumnHeader w="sm">Description</Table.ColumnHeader>
+            <Table.ColumnHeader w="sm">Source</Table.ColumnHeader>
+            <Table.ColumnHeader w="sm">Duration</Table.ColumnHeader>
             <Table.ColumnHeader w="sm">Actions</Table.ColumnHeader>
           </Table.Row>
         </Table.Header>
@@ -95,7 +98,10 @@ function ButtonsTable() {
           {buttons?.map((button) => (
             <Table.Row key={button.id} opacity={isPlaceholderData ? 0.5 : 1}>
               <Table.Cell truncate maxW="sm">
-                {button.id}
+                {button.id.slice(0, 4) + "..." + button.id.slice(-1)}
+              </Table.Cell>
+              <Table.Cell truncate maxW="sm">
+                {button.type}
               </Table.Cell>
               <Table.Cell truncate maxW="sm">
                 {button.title}
@@ -106,6 +112,12 @@ function ButtonsTable() {
                 maxW="30%"
               >
                 {button.description || "N/A"}
+              </Table.Cell>
+              <Table.Cell truncate maxW="sm">
+                {button.source}
+              </Table.Cell>
+              <Table.Cell truncate maxW="sm">
+                {button.duration ? `${button.duration} seconds` : "N/A"}
               </Table.Cell>
               <Table.Cell>
                 <ButtonActionsMenu button={button} />
