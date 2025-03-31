@@ -161,6 +161,14 @@ def test_delete_button(
     Test the deletion of a button.
     """
     button = create_random_button(db)
+
+    # Buttons must be retired before deletion
+    button.retired_at = "2023-01-01T00:00:00Z"
+    db.add(button)
+    db.commit()
+    db.refresh(button)
+    assert button.retired_at is not None
+
     response = client.delete(
         f"{settings.API_V1_STR}/buttons/{button.id}",
         headers=superuser_token_headers,
