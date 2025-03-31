@@ -9,41 +9,111 @@ export type Body_login_login_access_token = {
   client_secret?: string | null
 }
 
+export type ButtonCreate = {
+  title: string
+  /**
+   * Button type (e.g. PSA, ID, SFX)
+   */
+  type: string
+  description?: string | null
+  /**
+   * In seconds
+   */
+  duration?: number | null
+  source?: string | null
+}
+
+export type ButtonPublic = {
+  title: string
+  /**
+   * Button type (e.g. PSA, ID, SFX)
+   */
+  type: string
+  description?: string | null
+  /**
+   * In seconds
+   */
+  duration?: number | null
+  source?: string | null
+  id: string
+  created_by: string
+  usage_count: number
+  retired_at: string | null
+}
+
+export type ButtonRetirement = {
+  id?: string
+  button_id: string
+  created_by: string
+  retired_at?: string
+  unretired_at?: string | null
+}
+
+/**
+ * Response model for Button retirement records.
+ */
+export type ButtonRetirementsPublic = {
+  data: Array<ButtonRetirement>
+  count: number
+}
+
+export type ButtonsPublic = {
+  data: Array<ButtonPublic>
+  count: number
+}
+
+export type ButtonUpdate = {
+  title?: string | null
+  type?: string | null
+  description?: string | null
+  /**
+   * In seconds
+   */
+  duration?: number | null
+  source?: string | null
+}
+
 export type HTTPValidationError = {
   detail?: Array<ValidationError>
 }
 
-export type ItemCreate = {
-  title: string
-  description?: string | null
-}
-
-export type ItemPublic = {
-  title: string
-  description?: string | null
-  id: string
-  owner_id: string
-}
-
-export type ItemsPublic = {
-  data: Array<ItemPublic>
-  count: number
-}
-
-export type ItemUpdate = {
-  title?: string | null
-  description?: string | null
-}
-
+/**
+ * Generic message used in endpoint responses.
+ */
 export type Message = {
   message: string
 }
 
+/**
+ * Input string used for password resets.
+ */
 export type NewPassword = {
   token: string
   new_password: string
 }
 
+/**
+ * Pydantic model to speficy the required fields for user creation.
+ *
+ * TODO: consider moving this to the models module?
+ */
+export type PrivateUserCreate = {
+  email: string
+  password: string
+  full_name: string
+  is_verified?: boolean
+}
+
+/**
+ * Request model for retiring a Button.
+ */
+export type RetireButtonRequest = {
+  retire?: boolean | null
+}
+
+/**
+ * JSON payload containing access token.
+ */
 export type Token = {
   access_token: string
   token_type?: string
@@ -100,37 +170,70 @@ export type ValidationError = {
   type: string
 }
 
-export type ItemsReadItemsData = {
+export type ButtonsListAllButtonsData = {
   limit?: number
   skip?: number
 }
 
-export type ItemsReadItemsResponse = ItemsPublic
+export type ButtonsListAllButtonsResponse = ButtonsPublic
 
-export type ItemsCreateItemData = {
-  requestBody: ItemCreate
+export type ButtonsCreateButtonData = {
+  requestBody: ButtonCreate
 }
 
-export type ItemsCreateItemResponse = ItemPublic
+export type ButtonsCreateButtonResponse = ButtonPublic
 
-export type ItemsReadItemData = {
+export type ButtonsReadButtonData = {
   id: string
 }
 
-export type ItemsReadItemResponse = ItemPublic
+export type ButtonsReadButtonResponse = ButtonPublic
 
-export type ItemsUpdateItemData = {
+export type ButtonsUpdateButtonData = {
   id: string
-  requestBody: ItemUpdate
+  requestBody: ButtonUpdate
 }
 
-export type ItemsUpdateItemResponse = ItemPublic
+export type ButtonsUpdateButtonResponse = ButtonPublic
 
-export type ItemsDeleteItemData = {
+export type ButtonsDeleteButtonData = {
+  force?: boolean
   id: string
 }
 
-export type ItemsDeleteItemResponse = Message
+export type ButtonsDeleteButtonResponse = Message
+
+export type ButtonsIncrementButtonUsageData = {
+  id: string
+}
+
+export type ButtonsIncrementButtonUsageResponse = ButtonPublic
+
+export type ButtonsGetButtonUsageData = {
+  id: string
+}
+
+export type ButtonsGetButtonUsageResponse = unknown
+
+export type ButtonsUpdateRetirementData = {
+  id: string
+  requestBody: RetireButtonRequest
+}
+
+export type ButtonsUpdateRetirementResponse = ButtonPublic
+
+export type ButtonsGetRetirementsData = {
+  id: string
+}
+
+export type ButtonsGetRetirementsResponse = ButtonRetirementsPublic
+
+export type ButtonsListAllRetirementsData = {
+  limit?: number
+  skip?: number
+}
+
+export type ButtonsListAllRetirementsResponse = ButtonRetirementsPublic
 
 export type LoginLoginAccessTokenData = {
   formData: Body_login_login_access_token
@@ -157,6 +260,12 @@ export type LoginRecoverPasswordHtmlContentData = {
 }
 
 export type LoginRecoverPasswordHtmlContentResponse = string
+
+export type PrivateCreateUserData = {
+  requestBody: PrivateUserCreate
+}
+
+export type PrivateCreateUserResponse = UserPublic
 
 export type UsersReadUsersData = {
   limit?: number

@@ -4,16 +4,26 @@ import type { CancelablePromise } from "./core/CancelablePromise"
 import { OpenAPI } from "./core/OpenAPI"
 import { request as __request } from "./core/request"
 import type {
-  ItemsReadItemsData,
-  ItemsReadItemsResponse,
-  ItemsCreateItemData,
-  ItemsCreateItemResponse,
-  ItemsReadItemData,
-  ItemsReadItemResponse,
-  ItemsUpdateItemData,
-  ItemsUpdateItemResponse,
-  ItemsDeleteItemData,
-  ItemsDeleteItemResponse,
+  ButtonsListAllButtonsData,
+  ButtonsListAllButtonsResponse,
+  ButtonsCreateButtonData,
+  ButtonsCreateButtonResponse,
+  ButtonsReadButtonData,
+  ButtonsReadButtonResponse,
+  ButtonsUpdateButtonData,
+  ButtonsUpdateButtonResponse,
+  ButtonsDeleteButtonData,
+  ButtonsDeleteButtonResponse,
+  ButtonsIncrementButtonUsageData,
+  ButtonsIncrementButtonUsageResponse,
+  ButtonsGetButtonUsageData,
+  ButtonsGetButtonUsageResponse,
+  ButtonsUpdateRetirementData,
+  ButtonsUpdateRetirementResponse,
+  ButtonsGetRetirementsData,
+  ButtonsGetRetirementsResponse,
+  ButtonsListAllRetirementsData,
+  ButtonsListAllRetirementsResponse,
   LoginLoginAccessTokenData,
   LoginLoginAccessTokenResponse,
   LoginTestTokenResponse,
@@ -23,6 +33,8 @@ import type {
   LoginResetPasswordResponse,
   LoginRecoverPasswordHtmlContentData,
   LoginRecoverPasswordHtmlContentResponse,
+  PrivateCreateUserData,
+  PrivateCreateUserResponse,
   UsersReadUsersData,
   UsersReadUsersResponse,
   UsersCreateUserData,
@@ -46,22 +58,24 @@ import type {
   UtilsHealthCheckResponse,
 } from "./types.gen"
 
-export class ItemsService {
+export class ButtonsService {
   /**
-   * Read Items
-   * Retrieve items.
+   * List All Buttons
+   * Retrieve all Buttons in the database. Depending on the role of the
+   * user making the request, the response may include all Buttons or
+   * only those created by the requesting user.
    * @param data The data for the request.
    * @param data.skip
    * @param data.limit
-   * @returns ItemsPublic Successful Response
+   * @returns ButtonsPublic Successful Response
    * @throws ApiError
    */
-  public static readItems(
-    data: ItemsReadItemsData = {},
-  ): CancelablePromise<ItemsReadItemsResponse> {
+  public static listAllButtons(
+    data: ButtonsListAllButtonsData = {},
+  ): CancelablePromise<ButtonsListAllButtonsResponse> {
     return __request(OpenAPI, {
       method: "GET",
-      url: "/api/v1/items/",
+      url: "/api/v1/buttons/",
       query: {
         skip: data.skip,
         limit: data.limit,
@@ -73,19 +87,19 @@ export class ItemsService {
   }
 
   /**
-   * Create Item
-   * Create new item.
+   * Create Button
+   * Create a new Button.
    * @param data The data for the request.
    * @param data.requestBody
-   * @returns ItemPublic Successful Response
+   * @returns ButtonPublic Successful Response
    * @throws ApiError
    */
-  public static createItem(
-    data: ItemsCreateItemData,
-  ): CancelablePromise<ItemsCreateItemResponse> {
+  public static createButton(
+    data: ButtonsCreateButtonData,
+  ): CancelablePromise<ButtonsCreateButtonResponse> {
     return __request(OpenAPI, {
       method: "POST",
-      url: "/api/v1/items/",
+      url: "/api/v1/buttons/",
       body: data.requestBody,
       mediaType: "application/json",
       errors: {
@@ -95,19 +109,19 @@ export class ItemsService {
   }
 
   /**
-   * Read Item
-   * Get item by ID.
+   * Read Button
+   * Get a Button by its ID.
    * @param data The data for the request.
    * @param data.id
-   * @returns ItemPublic Successful Response
+   * @returns ButtonPublic Successful Response
    * @throws ApiError
    */
-  public static readItem(
-    data: ItemsReadItemData,
-  ): CancelablePromise<ItemsReadItemResponse> {
+  public static readButton(
+    data: ButtonsReadButtonData,
+  ): CancelablePromise<ButtonsReadButtonResponse> {
     return __request(OpenAPI, {
       method: "GET",
-      url: "/api/v1/items/{id}",
+      url: "/api/v1/buttons/{id}",
       path: {
         id: data.id,
       },
@@ -118,20 +132,20 @@ export class ItemsService {
   }
 
   /**
-   * Update Item
-   * Update an item.
+   * Update Button
+   * Update an existing Button, if the user has permission.
    * @param data The data for the request.
    * @param data.id
    * @param data.requestBody
-   * @returns ItemPublic Successful Response
+   * @returns ButtonPublic Successful Response
    * @throws ApiError
    */
-  public static updateItem(
-    data: ItemsUpdateItemData,
-  ): CancelablePromise<ItemsUpdateItemResponse> {
+  public static updateButton(
+    data: ButtonsUpdateButtonData,
+  ): CancelablePromise<ButtonsUpdateButtonResponse> {
     return __request(OpenAPI, {
       method: "PUT",
-      url: "/api/v1/items/{id}",
+      url: "/api/v1/buttons/{id}",
       path: {
         id: data.id,
       },
@@ -144,21 +158,149 @@ export class ItemsService {
   }
 
   /**
-   * Delete Item
-   * Delete an item.
+   * Delete Button
+   * Delete a Button if requesting user has permission. Using the
+   * optional query parameter `force=true` will delete the Button
+   * even if it has usage history or is not retired.
    * @param data The data for the request.
    * @param data.id
+   * @param data.force
    * @returns Message Successful Response
    * @throws ApiError
    */
-  public static deleteItem(
-    data: ItemsDeleteItemData,
-  ): CancelablePromise<ItemsDeleteItemResponse> {
+  public static deleteButton(
+    data: ButtonsDeleteButtonData,
+  ): CancelablePromise<ButtonsDeleteButtonResponse> {
     return __request(OpenAPI, {
       method: "DELETE",
-      url: "/api/v1/items/{id}",
+      url: "/api/v1/buttons/{id}",
       path: {
         id: data.id,
+      },
+      query: {
+        force: data.force,
+      },
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+
+  /**
+   * Increment Button Usage
+   * Increment the usage count of a Button.
+   * @param data The data for the request.
+   * @param data.id
+   * @returns ButtonPublic Successful Response
+   * @throws ApiError
+   */
+  public static incrementButtonUsage(
+    data: ButtonsIncrementButtonUsageData,
+  ): CancelablePromise<ButtonsIncrementButtonUsageResponse> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/v1/buttons/{id}/increment",
+      path: {
+        id: data.id,
+      },
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+
+  /**
+   * Get Button Usage
+   * Get the usage count and recent uses of a Button.
+   * @param data The data for the request.
+   * @param data.id
+   * @returns unknown Successful Response
+   * @throws ApiError
+   */
+  public static getButtonUsage(
+    data: ButtonsGetButtonUsageData,
+  ): CancelablePromise<ButtonsGetButtonUsageResponse> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/v1/buttons/{id}/usage",
+      path: {
+        id: data.id,
+      },
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+
+  /**
+   * Update Retirement
+   * Retire or unretire a Button.
+   * @param data The data for the request.
+   * @param data.id
+   * @param data.requestBody
+   * @returns ButtonPublic Successful Response
+   * @throws ApiError
+   */
+  public static updateRetirement(
+    data: ButtonsUpdateRetirementData,
+  ): CancelablePromise<ButtonsUpdateRetirementResponse> {
+    return __request(OpenAPI, {
+      method: "PUT",
+      url: "/api/v1/buttons/{id}/retire",
+      path: {
+        id: data.id,
+      },
+      body: data.requestBody,
+      mediaType: "application/json",
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+
+  /**
+   * Get Retirements
+   * Get retirement records for a Button.
+   * @param data The data for the request.
+   * @param data.id
+   * @returns ButtonRetirementsPublic Successful Response
+   * @throws ApiError
+   */
+  public static getRetirements(
+    data: ButtonsGetRetirementsData,
+  ): CancelablePromise<ButtonsGetRetirementsResponse> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/v1/buttons/{id}/retirements",
+      path: {
+        id: data.id,
+      },
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+
+  /**
+   * List All Retirements
+   * List all retirement records for Buttons. Depending on the role of
+   * the user making the request, the response may include all Buttons or
+   * only those retired by the requesting user.
+   * @param data The data for the request.
+   * @param data.skip
+   * @param data.limit
+   * @returns ButtonRetirementsPublic Successful Response
+   * @throws ApiError
+   */
+  public static listAllRetirements(
+    data: ButtonsListAllRetirementsData = {},
+  ): CancelablePromise<ButtonsListAllRetirementsResponse> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/v1/buttons/retirements/",
+      query: {
+        skip: data.skip,
+        limit: data.limit,
       },
       errors: {
         422: "Validation Error",
@@ -170,7 +312,7 @@ export class ItemsService {
 export class LoginService {
   /**
    * Login Access Token
-   * OAuth2 compatible token login, get an access token for future requests
+   * OAuth2 compatible token login; get an access token for future requests.
    * @param data The data for the request.
    * @param data.formData
    * @returns Token Successful Response
@@ -192,7 +334,7 @@ export class LoginService {
 
   /**
    * Test Token
-   * Test access token
+   * Test access token to see if it is valid and the user is active.
    * @returns UserPublic Successful Response
    * @throws ApiError
    */
@@ -205,7 +347,7 @@ export class LoginService {
 
   /**
    * Recover Password
-   * Password Recovery
+   * Password recovery - send email with password reset token.
    * @param data The data for the request.
    * @param data.email
    * @returns Message Successful Response
@@ -228,7 +370,7 @@ export class LoginService {
 
   /**
    * Reset Password
-   * Reset password
+   * Reset a password using a token.
    * @param data The data for the request.
    * @param data.requestBody
    * @returns Message Successful Response
@@ -250,7 +392,9 @@ export class LoginService {
 
   /**
    * Recover Password Html Content
-   * HTML Content for Password Recovery
+   * HTML content for password recovery.
+   *
+   * TODO: figure out what this is for, and write a better docstring.
    * @param data The data for the request.
    * @param data.email
    * @returns string Successful Response
@@ -272,10 +416,34 @@ export class LoginService {
   }
 }
 
+export class PrivateService {
+  /**
+   * Create User
+   * Create a new user.
+   * @param data The data for the request.
+   * @param data.requestBody
+   * @returns UserPublic Successful Response
+   * @throws ApiError
+   */
+  public static createUser(
+    data: PrivateCreateUserData,
+  ): CancelablePromise<PrivateCreateUserResponse> {
+    return __request(OpenAPI, {
+      method: "POST",
+      url: "/api/v1/private/users/",
+      body: data.requestBody,
+      mediaType: "application/json",
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+}
+
 export class UsersService {
   /**
    * Read Users
-   * Retrieve users.
+   * Retrieve all users.
    * @param data The data for the request.
    * @param data.skip
    * @param data.limit
@@ -414,7 +582,8 @@ export class UsersService {
 
   /**
    * Read User By Id
-   * Get a specific user by id.
+   * Get a specific user by id. Only superusers can get users other than
+   * themselves.
    * @param data The data for the request.
    * @param data.userId
    * @returns UserPublic Successful Response
@@ -488,7 +657,8 @@ export class UsersService {
 export class UtilsService {
   /**
    * Test Email
-   * Test emails.
+   * Test emails by generating a test email and sending it to the
+   * specified address (superuser only).
    * @param data The data for the request.
    * @param data.emailTo
    * @returns Message Successful Response
@@ -511,6 +681,8 @@ export class UtilsService {
 
   /**
    * Health Check
+   * Simple health check endpoint to verify that the API is running.
+   * Used by monitoring tools.
    * @returns boolean Successful Response
    * @throws ApiError
    */
