@@ -10,7 +10,7 @@ With this app, you can create a list of buttons in a database and assign a uniqu
 
 ### Example Use Case
 
-I am the sysadmin and developer at a [small college radio station](https://github.com/WBOR-91-1-FM). We have a [Stream Deck device that we use to play PSAs](https://mdrxy.com/essays/cartwall.html), station IDs, and sound effects. To maintain FCC compliance, we need to log when PSAs are played. While we do keep logs in Spinitron, it relies on human input to track when a PSA is played. This is not always accurate, as it can be difficult to remember to manually log each PSA.
+I am the sysadmin and developer at a [small college radio station](https://github.com/wbor-fm). We have a [Stream Deck device that we use to play PSAs](https://mdrxy.com/essays/cartwall.html), station IDs, and sound effects. To maintain FCC compliance, we need to log when PSAs are played. While we do keep logs in Spinitron, it relies on human input to track when a PSA is played. This is not always accurate, as it can be difficult to remember to manually log each PSA.
 
 Furthermore, I wanted to track how often each button is used to help us understand which buttons are most popular and which ones we might want to replace or update.
 
